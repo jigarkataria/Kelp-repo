@@ -25,10 +25,11 @@ router.get('/', async function (req, res, next) {
     'address.city': 'address_city',
     'address.state': 'address_state',
     'gender': 'gender',
-    'name' : 'name', // to remove from additional info
-    'address' : 'address' // to remove from additional info
+    'name': 'name', // to remove from additional info
+    'address': 'address' // to remove from additional info
   };
   let results = [];
+  // loop for all records in csv
   for (let i = 0; i < jsonArray.length; i++) {
     const record = {};
     let nameRecord = jsonArray[i]
@@ -43,15 +44,17 @@ router.get('/', async function (req, res, next) {
       }
     }
     const additionalInfo = {};
-    //Additional Info
+    //Additional Info loop
     for (const field in jsonArray[i]) {
       if (!fieldMapping.hasOwnProperty(field)) {
         additionalInfo[field] = jsonArray[i][field];
       }
     }
-    record.additional_info = additionalInfo;   
+    record.additional_info = additionalInfo;
+    // push record
     results.push(record);
-    if((results.length % 100) == 0){
+    // insert in db in 100 batch
+    if ((results.length % 100) == 0) {
       insertInDB(results);
       results = [];
     }
@@ -59,6 +62,7 @@ router.get('/', async function (req, res, next) {
   res.send('Reading File in Progress');
 });
 
+// Insert documents
 const insertInDB = async (records) => {
   const insertPromises = records.map((record) => {
     const { first_name, last_name, age, address, additional_info } = record;
@@ -71,7 +75,6 @@ const insertInDB = async (records) => {
 
   Promise.all(insertPromises)
     .then(() => {
-      calculateAgeDistribution();
       console.log('Data inserted successfully');
     })
     .catch((error) => {
@@ -79,6 +82,7 @@ const insertInDB = async (records) => {
     });
 }
 
+//Query for calculating age distribution
 const calculateAgeDistribution = async () => {
   try {
     const client = await pool.connect();
@@ -96,6 +100,10 @@ const calculateAgeDistribution = async () => {
   }
 };
 
-calculateAgeDistribution();
+router.get('/getAgeDistribution',async function (req,res){
+  calculateAgeDistribution();
+})
+
+
 
 module.exports = router;
